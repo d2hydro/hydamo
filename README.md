@@ -1,4 +1,4 @@
-# hydamo
+# HyDAMO
 Module to work with the Dutch Hydrological Data Model (HyDAMO)
 
 ## Install a copy
