@@ -11,6 +11,7 @@ from pathlib import Path
 import warnings
 import logging
 from hydamo import geometry
+from hydamo.styles import add_styles_to_geopackage
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -19,7 +20,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 FIELD_TYPES_MAP_REV = fiona.schema.FIELD_TYPES_MAP_REV
 FIELD_TYPES_MAP = fiona.schema.FIELD_TYPES_MAP
 MODEL_CRS = "epsg:28992"
-SCHEMA_DIR = r"./schemas"
+SCHEMAS_DIR = Path(__file__).parent.joinpath("data", "schemas")
 
 GEOTYPE_MAPPING = {
     "LineString": LineString,
@@ -274,7 +275,7 @@ class HyDAMO:
     def __init__(
         self,
         version: str = "2.2",
-        schemas_path: Path = Path(__file__).parent.joinpath(r"./schemas"),
+        schemas_path: Path = SCHEMAS_DIR,
         ignored_layers: List = [
             "afvoeraanvoergebied",
             "imwa_geoobject",
@@ -284,7 +285,7 @@ class HyDAMO:
         ],
     ):
         self.version = version
-        self.schema_json = schemas_path.joinpath(f"hydamo/HyDAMO_{version}.json")
+        self.schema_json = schemas_path.joinpath(f"HyDAMO_{version}.json")
         self.layers = []
         self.ignored_layers = ignored_layers
 
@@ -334,6 +335,22 @@ class HyDAMO:
             )
 
     def get(self, layer: str, global_id: str):
+        """
+        Get a DataFrame row (feature) providing a layer an global_id.
+
+        Parameters
+        ----------
+        layer : str
+            DESCRIPTION.
+        global_id : str
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         return getattr(self,layer).set_index("globalid").loc[global_id]
 
     def set_data(
@@ -417,6 +434,8 @@ class HyDAMO:
                     if gdf.index.name in gdf.columns:
                         gdf = gdf.reset_index(drop=True).copy()
                     gdf.to_file(file_path, layer=layer, driver="GPKG")
+
+        add_styles_to_geopackage(file_path)
                     
     @classmethod
     def from_geopackage(cls, file_path, check_columns=True, check_geotype=True):
@@ -449,7 +468,3 @@ class HyDAMO:
                     check_geotype=check_geotype
                     )
         return hydamo
-
-
-if __name__ == '__main__':
-    hydamo = HyDAMO()
